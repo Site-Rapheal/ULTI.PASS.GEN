@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ULTI.PASS.GEN - Pastel Vault</title>
+    <link rel="icon" href="flaticon-namehere">
+    <style>
+        :root {
+            --glass-bg: rgba(255, 255, 255, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.6);
+            --text-main: #1e293b;
+            --text-light: #64748b;
+        }
+
+        /* Generate Theme (Green/Blue) */
+        body.theme-enc {
+            --primary: #84cc16;
+            --primary-hover: #65a30d;
+            --bg-color: #f0fdf4;
+            --blob-1: #6ee7b7; --blob-2: #5eead4; --blob-3: #fef08a; --blob-4: #d9f99d;
+        }
+
+        /* Reveal Theme (Red/Orange/Yellow) */
+        body.theme-dec {
+            --primary: #f97316;
+            --primary-hover: #ea580c;
+            --bg-color: #fff7ed;
+            --blob-1: #fca5a5; --blob-2: #fdba74; --blob-3: #fde047; --blob-4: #fef08a;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: flex-start;
+            padding: 40px 20px;
+            box-sizing: border-box;
+            background-color: var(--bg-color);
+            overflow-y: auto;
+            position: relative;
+            color: var(--text-main);
+            transition: background-color 0.8s ease;
+            
+            /* Native App Feel */
+            -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none;
+        }
+
+        /* Custom Scrollbars */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--primary); }
+
+        /* Soft Pastel Background Blobs */
+        .blob {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(90px);
+            z-index: -1;
+            opacity: 0.85;
+            animation: float 80s infinite ease-in-out alternate;
+            transition: background 0.8s ease;
+        }
+        .blob-1 { width: 550px; height: 550px; background: var(--blob-1); top: -15%; left: -10%; animation-delay: 0s; }
+        .blob-2 { width: 650px; height: 650px; background: var(--blob-2); bottom: -20%; right: -15%; animation-delay: -20s; }
+        .blob-3 { width: 450px; height: 450px; background: var(--blob-3); top: 25%; left: 50%; transform: translateX(-50%); animation-delay: -40s; }
+        .blob-4 { width: 350px; height: 350px; background: var(--blob-4); bottom: 5%; left: 15%; animation-delay: -60s; }
+
+        @keyframes float {
+            0% { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(40px, -40px) scale(1.15); }
+        }
+
+        /* Main Glass Card */
+        .card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(28px); -webkit-backdrop-filter: blur(28px);
+            border: 1px solid var(--glass-border);
+            padding: 35px 40px;
+            border-radius: 32px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255,255,255,0.8);
+            width: 100%; max-width: 650px;
+            box-sizing: border-box;
+            z-index: 10;
+            margin: auto; 
+            transition: all 0.4s ease;
+        }
+
+        /* Top Header & Switch */
+        .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        h2 { margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.5px; }
+        .subtitle { margin: 0 0 25px 0; font-size: 13.5px; color: var(--text-light); font-weight: 500; line-height: 1.4; transition: color 0.3s; }
+
+        .header-actions { display: flex; align-items: center; gap: 10px; }
+
+        .toggle-container {
+            display: flex; align-items: center; background: rgba(255,255,255,0.5);
+            padding: 4px; border-radius: 20px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.03);
+            border: 1px solid rgba(255,255,255,0.6);
+        }
+        .toggle-btn {
+            padding: 6px 14px; border-radius: 16px; border: none; background: transparent;
+            font-size: 13px; font-weight: 700; color: var(--text-light); cursor: pointer; transition: all 0.3s;
+        }
+        .toggle-btn.active { background: #ffffff; color: var(--primary); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+        /* Reset Button */
+        .reset-btn {
+            background: rgba(255, 255, 255, 0.5); border: 1px solid rgba(255, 255, 255, 0.6);
+            border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+            color: var(--text-light); cursor: pointer; transition: all 0.3s; box-shadow: inset 0 2px 4px rgba(0,0,0,0.03);
+        }
+        .reset-btn:hover { color: var(--primary); background: #ffffff; box-shadow: 0 2px 8px rgba(0,0,0,0.1); transform: rotate(180deg); }
+
+        /* Inputs */
+        .input-row { display: flex; gap: 15px; margin-bottom: 20px; }
+        .input-main { flex: 2; }
+        .input-pin { flex: 1; }
+        .input-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: 700; font-size: 12px; color: var(--text-light); text-transform: uppercase; letter-spacing: 1px; }
+        
+        input[type="text"], input[type="number"] {
+            width: 100%; padding: 14px 20px; border: 2px solid #e2e8f0; border-radius: 16px;
+            font-size: 18px; font-weight: 600; color: var(--text-main);
+            background: rgba(255, 255, 255, 0.85); box-sizing: border-box;
+            transition: all 0.3s ease; outline: none; font-family: monospace;
+            -webkit-user-select: auto; -moz-user-select: auto; -ms-user-select: auto; user-select: auto;
+        }
+        input[type="number"] { font-variant-numeric: tabular-nums; }
+        input[type="text"]:focus, input[type="number"]:focus { border-color: var(--primary); background: #ffffff; box-shadow: 0 0 0 4px rgba(0,0,0,0.05); }
+
+        /* Settings Row (Padding & Slider) */
+        .settings-row { display: flex; gap: 15px; margin-bottom: 20px; }
+        .setting-box {
+            flex: 1; display: flex; justify-content: space-between; align-items: center;
+            background: #fdfcff; border: 1px solid var(--primary); padding: 12px 16px;
+            border-radius: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); transition: border-color 0.4s;
+        }
+        .setting-box span { font-size: 13px; font-weight: 700; color: var(--primary); transition: color 0.4s; }
+        
+        /* CSS Switch */
+        .switch { position: relative; display: inline-block; width: 44px; height: 24px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: .4s; border-radius: 24px; }
+        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--primary); }
+        input:checked + .slider:before { transform: translateX(20px); }
+
+        /* Range Slider */
+        input[type="range"] { -webkit-appearance: none; width: 100px; height: 6px; background: #cbd5e1; border-radius: 4px; outline: none; padding: 0; border: none; }
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--primary); cursor: pointer; transition: transform 0.1s; }
+        input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); }
+
+        /* Segmented Control for Complexity */
+        .complexity-grid {
+            display: flex; background: rgba(255,255,255,0.6); border-radius: 14px; padding: 4px;
+            border: 1px solid rgba(255,255,255,0.5); gap: 4px;
+        }
+        .complexity-option { flex: 1; text-align: center; }
+        .complexity-option input { display: none; }
+        .complexity-option label {
+            display: block; padding: 10px 4px; margin: 0; cursor: pointer; border-radius: 10px;
+            font-size: 12px; font-weight: 700; color: var(--text-light); transition: all 0.2s;
+        }
+        .complexity-option input:checked + label {
+            background: #ffffff; color: var(--primary); box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+        }
+
+        /* Result Area */
+        .result-box {
+            background: #ffffff; border-radius: 20px; padding: 25px; margin-top: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.04); border: 1px solid rgba(255,255,255,0.8);
+            position: relative; min-height: 80px; display: flex; flex-direction: column; justify-content: center;
+        }
+        .result-label { font-size: 11px; font-weight: 800; color: var(--primary); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 12px; transition: color 0.4s;}
+        .result-text { 
+            font-size: 28px; font-weight: 800; color: var(--text-main); 
+            word-break: break-all; font-family: monospace; letter-spacing: 1px; line-height: 1.3;
+            max-height: 120px; overflow-y: auto; padding-right: 8px;
+        }
+        
+        /* Strength Meter */
+        .strength-wrapper { margin-top: 18px; }
+        .strength-bar-bg { width: 100%; height: 6px; background: #f1f5f9; border-radius: 4px; overflow: hidden; }
+        .strength-bar-fill { height: 100%; width: 0%; background: #cbd5e1; transition: width 0.4s ease, background 0.4s ease; border-radius: 4px; }
+        .strength-text { font-size: 11px; font-weight: 800; margin-top: 8px; text-align: right; letter-spacing: 1px; color: #94a3b8; transition: color 0.3s; }
+
+        /* Breakdown Area (Dim) */
+        .breakdown-box {
+            margin-top: 15px; padding-top: 15px; border-top: 1px dashed #e2e8f0;
+            display: flex; flex-wrap: wrap; gap: 8px; font-family: monospace;
+            max-height: 140px; overflow-y: auto; align-content: flex-start; padding-right: 8px;
+        }
+        .bd-chunk {
+            background: #f8fafc; border: 1px solid #e2e8f0; padding: 4px 8px;
+            border-radius: 8px; font-size: 12px; color: #94a3b8; font-weight: 600;
+        }
+        .bd-chunk strong { color: var(--primary); transition: color 0.4s; }
+        .bd-pad { background: #e2e8f0; border-color: #cbd5e1; opacity: 0.8; } /* Visual styling for padding blocks */
+
+        /* Intense Pulsing Glow Animation for Button */
+        @keyframes pulse-glow {
+            0% { box-shadow: 0 0 15px var(--primary-hover), 0 10px 20px rgba(0,0,0,0.1); }
+            100% { box-shadow: 0 0 35px var(--primary), 0 15px 30px rgba(0,0,0,0.2); }
+        }
+
+        /* Full Width Bottom Action Button */
+        .bottom-action-btn {
+            width: 100%; padding: 18px; margin-top: 25px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+            color: white; border: none; border-radius: 16px;
+            font-size: 16px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;
+            cursor: pointer; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            position: relative; overflow: hidden; z-index: 1;
+        }
+        
+        /* Sweeping Shine Effect */
+        .bottom-action-btn::before {
+            content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            transition: all 0.6s ease; z-index: -1;
+        }
+        .bottom-action-btn:hover::before { left: 100%; }
+        
+        /* Animated Hover */
+        .bottom-action-btn:hover {
+            transform: translateY(-3px) scale(1.01);
+            animation: pulse-glow 1.2s infinite alternate ease-in-out;
+        }
+        .bottom-action-btn:active { transform: translateY(1px) scale(0.99); box-shadow: 0 5px 10px rgba(0,0,0,0.1); animation: none; }
+
+        .hint-text { font-size: 12px; color: #94a3b8; margin-top: 15px; text-align: center; font-weight: 500; }
+        .footer-tagline { font-size: 10px; color: #cbd5e1; margin-top: 25px; text-align: center; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body class="theme-enc">
+
+    <!-- Pastel Gradient Blobs -->
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+    <div class="blob blob-4"></div>
+
+    <div class="card">
+        <div class="header-row">
+            <h2>ULTI.PASS<span style="color: var(--primary); transition: color 0.4s;">.GEN</span></h2>
+            
+            <div class="header-actions">
+                <!-- The Mode Switch -->
+                <div class="toggle-container">
+                    <button class="toggle-btn active" id="mode-enc" onclick="setAppMode('enc')">Generate</button>
+                    <button class="toggle-btn" id="mode-dec" onclick="setAppMode('dec')">Reveal</button>
+                </div>
+                
+                <!-- Reset Button -->
+                <button class="reset-btn" onclick="resetApp()" title="Reset Tool">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                </button>
+            </div>
+        </div>
+        
+        <p class="subtitle" id="appSubtitle">Transform simple memorable words into unbreakable, reversible passwords.</p>
+
+        <!-- Dynamic Input Section -->
+        <div class="input-row">
+            <div class="input-main">
+                <label id="main-input-label">1. Memorable Word</label>
+                <input type="text" id="mainInput" placeholder="e.g. SECRET" oninput="processCipher()" autocomplete="off">
+            </div>
+            <div class="input-pin">
+                <label>PIN (Salt)</label>
+                <input type="number" id="pinInput" placeholder="00" min="0" max="9999" oninput="processCipher()" autocomplete="off" title="Required to shift the math securely.">
+            </div>
+        </div>
+
+        <!-- Settings Row -->
+        <div class="settings-row" id="settingsRow">
+            <div class="setting-box">
+                <span>Force "0" Padding</span>
+                <label class="switch">
+                    <input type="checkbox" id="padToggle" checked onchange="processCipher()">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <div class="setting-box">
+                <span>Padding: <span id="paddingValTxt">+0 chars</span></span>
+                <input type="range" id="paddingSlider" min="0" max="30" value="0" oninput="updatePaddingSlider(); processCipher()">
+            </div>
+        </div>
+
+        <div class="input-group">
+            <label>2. Select Security Level</label>
+            <div class="complexity-grid">
+                <div class="complexity-option">
+                    <input type="radio" name="level" id="lvl-1" value="1" onchange="processCipher()">
+                    <label for="lvl-1">Numeric</label>
+                </div>
+                <div class="complexity-option">
+                    <input type="radio" name="level" id="lvl-2" value="2" onchange="processCipher()" checked>
+                    <label for="lvl-2">AlphaNum</label>
+                </div>
+                <div class="complexity-option">
+                    <input type="radio" name="level" id="lvl-3" value="3" onchange="processCipher()">
+                    <label for="lvl-3">Strong</label>
+                </div>
+                <div class="complexity-option">
+                    <input type="radio" name="level" id="lvl-4" value="4" onchange="processCipher()">
+                    <label for="lvl-4">Maximum</label>
+                </div>
+                <div class="complexity-option">
+                    <input type="radio" name="level" id="lvl-5" value="5" onchange="processCipher()">
+                    <label for="lvl-5">Ultimate</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="result-box">
+            <div class="result-label" id="result-label">Generated Password</div>
+            <div class="result-text" id="finalOutput">...</div>
+            
+            <!-- Strength Meter -->
+            <div class="strength-wrapper" id="strengthContainer">
+                <div class="strength-bar-bg">
+                    <div class="strength-bar-fill" id="strengthBar"></div>
+                </div>
+                <div class="strength-text" id="strengthText">AWAITING INPUT</div>
+            </div>
+
+            <!-- Dim Breakdown -->
+            <div class="breakdown-box hidden" id="breakdownOutput"></div>
+        </div>
+        
+        <button class="bottom-action-btn" onclick="copyResult()" id="mainActionBtn">COPY PASSWORD</button>
+        <div class="hint-text" id="hintText">Padding adds extra cryptographic junk blocks to hide your word's true length.</div>
+        <div class="footer-tagline">ULTI.PASS.GEN • Advanced Deterministic Cipher</div>
+    </div>
+
+    <script>
+        let currentMode = 'enc'; 
+        let encInputState = '';
+        let decInputState = '';
+        const symbolMap = ['*', '!', '@', '#', '$', '%', '^', '&', '~', '?']; 
+
+        function updatePaddingSlider() {
+            document.getElementById('paddingValTxt').innerText = '+' + document.getElementById('paddingSlider').value + ' chars';
+        }
+
+        function setAppMode(mode) {
+            if (currentMode === 'enc') {
+                encInputState = document.getElementById('mainInput').value;
+            } else {
+                decInputState = document.getElementById('mainInput').value;
+            }
+
+            currentMode = mode;
+            document.body.className = (mode === 'enc') ? 'theme-enc' : 'theme-dec';
+            document.getElementById('mainInput').value = (mode === 'enc') ? encInputState : decInputState;
+            
+            document.getElementById('finalOutput').innerText = '...';
+            document.getElementById('breakdownOutput').classList.add('hidden');
+            updateStrengthMeter(0, false);
+
+            if (mode === 'enc') {
+                document.getElementById('mode-enc').classList.add('active');
+                document.getElementById('mode-dec').classList.remove('active');
+                document.getElementById('appSubtitle').innerText = 'Transform simple memorable words into unbreakable, reversible passwords.';
+                document.getElementById('main-input-label').innerText = '1. Memorable Word';
+                document.getElementById('mainInput').placeholder = 'e.g. SECRET';
+                document.getElementById('result-label').innerText = 'Generated Password';
+                document.getElementById('mainActionBtn').innerText = 'COPY PASSWORD';
+                document.getElementById('strengthContainer').classList.remove('hidden');
+            } else {
+                document.getElementById('mode-dec').classList.add('active');
+                document.getElementById('mode-enc').classList.remove('active');
+                document.getElementById('appSubtitle').innerText = 'Paste your generated password below to safely decode the original word.';
+                document.getElementById('main-input-label').innerText = '1. Paste Password';
+                document.getElementById('mainInput').placeholder = 'e.g. sS@19eE$05...';
+                document.getElementById('result-label').innerText = 'Revealed Memorable Word';
+                document.getElementById('mainActionBtn').innerText = 'COPY MEMORABLE WORD';
+                document.getElementById('strengthContainer').classList.add('hidden');
+            }
+
+            // NOTE: Settings row remains visible in BOTH modes so user can align keys.
+            processCipher();
+        }
+
+        function resetApp() {
+            encInputState = '';
+            decInputState = '';
+            document.getElementById('mainInput').value = '';
+            document.getElementById('pinInput').value = '';
+            document.getElementById('lvl-2').checked = true;
+            document.getElementById('padToggle').checked = true;
+            document.getElementById('paddingSlider').value = 0;
+            updatePaddingSlider();
+            
+            setAppMode('enc');
+        }
+
+        function getComplexityLevel() {
+            if (document.getElementById('lvl-1').checked) return 1;
+            if (document.getElementById('lvl-2').checked) return 2;
+            if (document.getElementById('lvl-3').checked) return 3;
+            if (document.getElementById('lvl-4').checked) return 4;
+            if (document.getElementById('lvl-5').checked) return 5;
+            return 2;
+        }
+
+        function getCharBaseValue(char) {
+            let code = char.charCodeAt(0);
+            if (code >= 65 && code <= 90) return code - 64; 
+            if (code >= 48 && code <= 57) return (code - 48) + 27; 
+            return null;
+        }
+
+        function getCharFromBaseValue(val) {
+            if (val >= 1 && val <= 26) return String.fromCharCode(val + 64);
+            if (val >= 27 && val <= 36) return String.fromCharCode((val - 27) + 48);
+            return null;
+        }
+
+        function updateStrengthMeter(score, hasInput) {
+            const bar = document.getElementById('strengthBar');
+            const txt = document.getElementById('strengthText');
+            
+            if (!hasInput) {
+                bar.style.width = '0%';
+                txt.innerText = 'AWAITING INPUT';
+                txt.style.color = '#94a3b8';
+                return;
+            }
+
+            score = Math.min(Math.max(score, 5), 100);
+            bar.style.width = score + '%';
+
+            if (score <= 35) {
+                bar.style.background = '#ef4444'; 
+                txt.innerText = 'STRENGTH: WEAK';
+                txt.style.color = '#ef4444';
+            } else if (score <= 65) {
+                bar.style.background = '#f59e0b'; 
+                txt.innerText = 'STRENGTH: FAIR';
+                txt.style.color = '#f59e0b';
+            } else if (score <= 85) {
+                bar.style.background = '#84cc16'; 
+                txt.innerText = 'STRENGTH: STRONG';
+                txt.style.color = '#84cc16';
+            } else {
+                bar.style.background = '#10b981'; 
+                txt.innerText = 'STRENGTH: MAXIMUM';
+                txt.style.color = '#10b981';
+            }
+        }
+
+        function processCipher() {
+            let input = document.getElementById('mainInput').value.trim();
+            const pinStr = document.getElementById('pinInput').value.trim();
+            const pinOffset = pinStr === '' ? 0 : (parseInt(pinStr) || 0);
+            const level = getComplexityLevel();
+            const usePad = document.getElementById('padToggle').checked;
+            const padCount = parseInt(document.getElementById('paddingSlider').value) || 0;
+            
+            const bdOut = document.getElementById('breakdownOutput');
+
+            if (input === '') {
+                document.getElementById('finalOutput').innerText = '...';
+                bdOut.classList.add('hidden');
+                updateStrengthMeter(0, false);
+                document.getElementById('mainActionBtn').innerText = currentMode === 'enc' ? 'COPY PASSWORD' : 'COPY MEMORABLE WORD';
+                return;
+            }
+
+            let result;
+            if (currentMode === 'enc') {
+                result = encodeWord(input, level, pinOffset, usePad, padCount);
+                
+                let basePoints = Math.min(input.length + padCount, 25) * 6; 
+                let levelMultiplier = level * 0.25; 
+                let totalScore = basePoints * (0.5 + levelMultiplier);
+                if (pinOffset > 0) totalScore += 15; 
+                updateStrengthMeter(totalScore, true);
+
+            } else {
+                result = decodeWord(input, level, pinOffset, usePad, padCount);
+            }
+
+            document.getElementById('finalOutput').innerText = result.text || '⚠️ Invalid Input';
+            
+            if (result.breakdown) {
+                bdOut.innerHTML = result.breakdown;
+                bdOut.classList.remove('hidden');
+            } else {
+                bdOut.classList.add('hidden');
+            }
+            
+            document.getElementById('mainActionBtn').innerText = currentMode === 'enc' ? 'COPY PASSWORD' : 'COPY MEMORABLE WORD';
+        }
+
+        function encodeWord(word, level, offset, usePad, padCount) {
+            let encodedStr = '';
+            let breakdownHTML = '';
+
+            // 1. Encode the actual memorable word
+            for (let i = 0; i < word.length; i++) {
+                let char = word[i];
+                let upperChar = char.toUpperCase();
+                let baseVal = getCharBaseValue(upperChar);
+                
+                if (baseVal !== null) {
+                    let shiftedVal = ((baseVal - 1 + offset) % 36) + 1;
+                    let valStr = usePad ? shiftedVal.toString().padStart(2, '0') : shiftedVal.toString();
+                    
+                    let sym = symbolMap[shiftedVal % 10];
+                    let lower = char.toLowerCase();
+                    let upper = char;
+                    let chunk = '';
+
+                    if (level === 1) chunk = valStr;
+                    else if (level === 2) chunk = lower + valStr;
+                    else if (level === 3) chunk = upper + sym + valStr;
+                    else if (level === 4) chunk = lower + upper + sym + valStr;
+                    else if (level === 5) {
+                        let sym2 = symbolMap[(shiftedVal + 3) % 10]; 
+                        let form = (offset + i) % 3;
+                        if (form === 0) chunk = lower + upper + sym + valStr + sym2;
+                        if (form === 1) chunk = upper + sym + valStr + sym2 + lower;
+                        if (form === 2) chunk = sym + valStr + sym2 + upper + lower;
+                    }
+
+                    encodedStr += chunk;
+                    breakdownHTML += `<span class="bd-chunk"><strong>${char}</strong> ➔ ${chunk}</span>`;
+                } else {
+                    encodedStr += char;
+                    breakdownHTML += `<span class="bd-chunk"><strong>${char}</strong> ➔ ${char}</span>`;
+                }
+            }
+
+            // 2. Encode extra deterministic padding chunks
+            for (let p = 0; p < padCount; p++) {
+                // Generate a deterministic pseudo-random base value based on PIN, word length, and padding index
+                let padCode = ((offset + p * 13 + word.length) % 36) + 1; 
+                let char = getCharFromBaseValue(padCode);
+                let upperChar = char.toUpperCase();
+                
+                let shiftedVal = ((padCode - 1 + offset) % 36) + 1;
+                let valStr = usePad ? shiftedVal.toString().padStart(2, '0') : shiftedVal.toString();
+                
+                let sym = symbolMap[shiftedVal % 10];
+                let lower = char.toLowerCase();
+                let upper = char;
+                let chunk = '';
+                
+                let continuousIndex = word.length + p; // Continues the rotational form math perfectly
+
+                if (level === 1) chunk = valStr;
+                else if (level === 2) chunk = lower + valStr;
+                else if (level === 3) chunk = upper + sym + valStr;
+                else if (level === 4) chunk = lower + upper + sym + valStr;
+                else if (level === 5) {
+                    let sym2 = symbolMap[(shiftedVal + 3) % 10]; 
+                    let form = (offset + continuousIndex) % 3;
+                    if (form === 0) chunk = lower + upper + sym + valStr + sym2;
+                    if (form === 1) chunk = upper + sym + valStr + sym2 + lower;
+                    if (form === 2) chunk = sym + valStr + sym2 + upper + lower;
+                }
+
+                encodedStr += chunk;
+                // Add distinct styling to breakdown so user knows these are padding
+                breakdownHTML += `<span class="bd-chunk bd-pad"><strong>[PAD]</strong> ➔ ${chunk}</span>`;
+            }
+
+            return { text: encodedStr, breakdown: breakdownHTML };
+        }
+
+        function decodeWord(password, level, offset, usePad, padCount) {
+            password = password.trim(); 
+            
+            let chunkPattern;
+            if (level === 1) chunkPattern = usePad ? "\\d{2}" : "(?:3[0-6]|[1-2]\\d|\\d)";
+            else if (level === 2) chunkPattern = "[a-z0-9]\\d{1,2}";
+            else if (level === 3) chunkPattern = "[a-z0-9][\\*\\!\\@\\#\\$\\%\\^\\&\\~\\?]\\d{1,2}";
+            else if (level === 4) chunkPattern = "[a-z0-9]{2}[\\*\\!\\@\\#\\$\\%\\^\\&\\~\\?]\\d{1,2}";
+            else if (level === 5) {
+                let C = "[a-zA-Z0-9]"; 
+                let S = "[\\*\\!\\@\\#\\$\\%\\^\\&\\~\\?]";
+                let D = "\\d{1,2}";
+                let f0 = `${C}${C}${S}${D}${S}`;
+                let f1 = `${C}${S}${D}${S}${C}`;
+                let f2 = `${S}${D}${S}${C}${C}`;
+                chunkPattern = `(?:${f0}|${f1}|${f2})`;
+            }
+
+            let regex = new RegExp(chunkPattern + "|[\\s\\S]", "gi");
+            let chunks = password.match(regex);
+            
+            if (!chunks) return { text: '⚠️ Format Mismatch', breakdown: null };
+
+            // MAGIC PADDING REVEAL: Slice off the deterministic junk blocks from the end!
+            if (chunks.length < padCount) {
+                return { text: '⚠️ Padding Exceeds Length', breakdown: null };
+            }
+            if (padCount > 0) {
+                chunks = chunks.slice(0, chunks.length - padCount);
+            }
+
+            let decodedStr = '';
+            let breakdownHTML = '';
+            let strictRegex = new RegExp("^" + chunkPattern + "$", "i");
+
+            for (let chunk of chunks) {
+                if (!strictRegex.test(chunk)) {
+                    decodedStr += chunk;
+                    breakdownHTML += `<span class="bd-chunk">${chunk} ➔ <strong>${chunk}</strong></span>`;
+                    continue;
+                }
+
+                let valStr = '';
+                if (level <= 4) {
+                    if (level === 1) valStr = chunk;               
+                    if (level === 2) valStr = chunk.slice(1);      
+                    if (level === 3) valStr = chunk.slice(2);      
+                    if (level === 4) valStr = chunk.slice(3);   
+                } else {
+                    let numMatch = chunk.match(/\d+/);
+                    if (!numMatch) return { text: '⚠️ Invalid Block', breakdown: null };
+                    valStr = numMatch[0];
+                }
+                
+                let shiftedVal = parseInt(valStr);
+                if (isNaN(shiftedVal) || shiftedVal < 1 || shiftedVal > 36) {
+                    return { text: '⚠️ Invalid Math Block', breakdown: null };
+                }
+
+                let unshiftedVal = ((shiftedVal - 1 - (offset % 36) + 36) % 36) + 1;
+                let originalChar = getCharFromBaseValue(unshiftedVal);
+
+                if (originalChar) {
+                    decodedStr += originalChar;
+                    breakdownHTML += `<span class="bd-chunk">${chunk} ➔ <strong>${originalChar}</strong></span>`;
+                } else {
+                    return { text: '⚠️ Decoding Error', breakdown: null };
+                }
+            }
+            return { text: decodedStr, breakdown: breakdownHTML };
+        }
+
+        function copyResult() {
+            const textToCopy = document.getElementById('finalOutput').innerText;
+            const btn = document.getElementById('mainActionBtn');
+            const originalText = btn.innerText;
+
+            if (textToCopy === '...' || textToCopy.includes('⚠️')) return;
+
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                btn.innerText = 'COPIED TO CLIPBOARD!';
+                setTimeout(() => { btn.innerText = originalText; }, 2000);
+            }).catch(() => {
+                const textArea = document.createElement("textarea");
+                textArea.value = textToCopy;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand("Copy");
+                textArea.remove();
+                btn.innerText = 'COPIED TO CLIPBOARD!';
+                setTimeout(() => { btn.innerText = originalText; }, 2000);
+            });
+        }
+    </script>
+</body>
+</html>
