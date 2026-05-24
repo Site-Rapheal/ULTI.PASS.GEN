@@ -476,7 +476,6 @@
 
             let input = document.getElementById('mainInput').value.trim();
             const pinStr = document.getElementById('pinInput').value.trim();
-            const pinOffset = pinStr === '' ? 0 : (parseInt(pinStr) || 0);
             const usePad = padToggle.checked;
             const padCount = parseInt(document.getElementById('paddingSlider').value) || 0;
             
@@ -492,16 +491,16 @@
 
             let result;
             if (currentMode === 'enc') {
-                result = encodeWord(input, level, pinOffset, usePad, padCount);
+                result = encodeWord(input, level, pinStr, usePad, padCount);
                 
                 let basePoints = Math.min(input.length + padCount, 25) * 6; 
                 let levelMultiplier = level * 0.25; 
                 let totalScore = basePoints * (0.5 + levelMultiplier);
-                if (pinOffset > 0) totalScore += 15; 
+                if (pinStr !== '' && parseInt(pinStr) > 0) totalScore += 15; 
                 updateStrengthMeter(totalScore, true);
 
             } else {
-                result = decodeWord(input, level, pinOffset, usePad, padCount);
+                result = decodeWord(input, level, pinStr, usePad, padCount);
             }
 
             document.getElementById('finalOutput').innerText = result.text || '⚠️ Invalid Input';
@@ -516,9 +515,10 @@
             document.getElementById('mainActionBtn').innerText = currentMode === 'enc' ? 'COPY PASSWORD' : 'COPY MEMORABLE WORD';
         }
 
-        function encodeWord(word, level, offset, usePad, padCount) {
+        function encodeWord(word, level, pinStr, usePad, padCount) {
             let encodedStr = '';
             let breakdownHTML = '';
+            const baseOffset = pinStr === '' ? 0 : (parseInt(pinStr) || 0);
 
             // 1. Encode the actual memorable word
             for (let i = 0; i < word.length; i++) {
@@ -526,8 +526,13 @@
                 let upperChar = char.toUpperCase();
                 let baseVal = getCharBaseValue(upperChar);
                 
+                let dynamicOffset = baseOffset;
+                if (pinStr.length > 0) {
+                    dynamicOffset += parseInt(pinStr[i % pinStr.length] || 0);
+                }
+
                 if (baseVal !== null) {
-                    let shiftedVal = ((baseVal - 1 + offset) % 36) + 1;
+                    let shiftedVal = ((baseVal - 1 + dynamicOffset) % 36) + 1;
                     let valStr = usePad ? shiftedVal.toString().padStart(2, '0') : shiftedVal.toString();
                     
                     let sym = symbolMap[shiftedVal % 10];
@@ -541,7 +546,7 @@
                     else if (level === 4) chunk = lower + upper + sym + valStr;
                     else if (level === 5) {
                         let sym2 = symbolMap[(shiftedVal + 3) % 10]; 
-                        let form = (offset + i) % 3;
+                        let form = (dynamicOffset + i) % 3;
                         if (form === 0) chunk = lower + upper + sym + valStr + sym2;
                         if (form === 1) chunk = upper + sym + valStr + sym2 + lower;
                         if (form === 2) chunk = sym + valStr + sym2 + upper + lower;
@@ -557,20 +562,25 @@
 
             // 2. Encode extra deterministic padding chunks
             for (let p = 0; p < padCount; p++) {
+                let continuousIndex = word.length + p; // Continues the rotational form math perfectly
+                
+                let dynamicOffset = baseOffset;
+                if (pinStr.length > 0) {
+                    dynamicOffset += parseInt(pinStr[continuousIndex % pinStr.length] || 0);
+                }
+
                 // Generate a deterministic pseudo-random base value based on PIN, word length, and padding index
-                let padCode = ((offset + p * 13 + word.length) % 36) + 1; 
+                let padCode = ((dynamicOffset + p * 13 + word.length) % 36) + 1; 
                 let char = getCharFromBaseValue(padCode);
                 let upperChar = char.toUpperCase();
                 
-                let shiftedVal = ((padCode - 1 + offset) % 36) + 1;
+                let shiftedVal = ((padCode - 1 + dynamicOffset) % 36) + 1;
                 let valStr = usePad ? shiftedVal.toString().padStart(2, '0') : shiftedVal.toString();
                 
                 let sym = symbolMap[shiftedVal % 10];
                 let lower = char.toLowerCase();
                 let upper = char;
                 let chunk = '';
-                
-                let continuousIndex = word.length + p; // Continues the rotational form math perfectly
 
                 if (level === 1) chunk = valStr;
                 else if (level === 2) chunk = upper + valStr; // FIX: Aligns padding structure with level 2 case fix
@@ -578,7 +588,7 @@
                 else if (level === 4) chunk = lower + upper + sym + valStr;
                 else if (level === 5) {
                     let sym2 = symbolMap[(shiftedVal + 3) % 10]; 
-                    let form = (offset + continuousIndex) % 3;
+                    let form = (dynamicOffset + continuousIndex) % 3;
                     if (form === 0) chunk = lower + upper + sym + valStr + sym2;
                     if (form === 1) chunk = upper + sym + valStr + sym2 + lower;
                     if (form === 2) chunk = sym + valStr + sym2 + upper + lower;
@@ -592,8 +602,9 @@
             return { text: encodedStr, breakdown: breakdownHTML };
         }
 
-        function decodeWord(password, level, offset, usePad, padCount) {
+        function decodeWord(password, level, pinStr, usePad, padCount) {
             password = password.trim(); 
+            const baseOffset = pinStr === '' ? 0 : (parseInt(pinStr) || 0);
             
             let chunkPattern;
             if (level === 1) chunkPattern = usePad ? "\\d{2}" : "(?:3[0-6]|[1-2]\\d|\\d)";
@@ -627,10 +638,17 @@
             let breakdownHTML = '';
             let strictRegex = new RegExp("^" + chunkPattern + "$", "i");
 
+            let chunkIndex = 0;
             for (let chunk of chunks) {
+                let dynamicOffset = baseOffset;
+                if (pinStr.length > 0) {
+                    dynamicOffset += parseInt(pinStr[chunkIndex % pinStr.length] || 0);
+                }
+
                 if (!strictRegex.test(chunk)) {
                     decodedStr += chunk;
                     breakdownHTML += `<span class="bd-chunk">${chunk} ➔ <strong>${chunk}</strong></span>`;
+                    chunkIndex++;
                     continue;
                 }
 
@@ -651,7 +669,7 @@
                     return { text: '⚠️ Invalid Math Block', breakdown: null };
                 }
 
-                let unshiftedVal = ((shiftedVal - 1 - (offset % 36) + 36) % 36) + 1;
+                let unshiftedVal = ((shiftedVal - 1 - (dynamicOffset % 36) + 36) % 36) + 1;
                 let baseChar = getCharFromBaseValue(unshiftedVal);
                 let originalChar = baseChar;
 
@@ -671,6 +689,8 @@
                 } else {
                     return { text: '⚠️ Decoding Error', breakdown: null };
                 }
+                
+                chunkIndex++;
             }
             return { text: decodedStr, breakdown: breakdownHTML };
         }
