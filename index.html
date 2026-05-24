@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- THE STEALTH CLOAK: Blocks all search engines from finding this page -->
+        <!-- THE STEALTH CLOAK: Blocks all search engines from finding this page -->
     <meta name="robots" content="noindex, nofollow, noarchive">
     <title>ULTI.PASS.GEN - Pastel Vault</title>
-    <link rel="icon" href="Secure-lock.png">
+    <link rel="icon" href="Secure-lock">
     <style>
         :root {
             --glass-bg: rgba(255, 255, 255, 0.7);
@@ -536,7 +536,7 @@
                     let chunk = '';
 
                     if (level === 1) chunk = valStr;
-                    else if (level === 2) chunk = lower + valStr;
+                    else if (level === 2) chunk = upper + valStr; // FIX: Stores original case instead of forcing lowercase
                     else if (level === 3) chunk = upper + sym + valStr;
                     else if (level === 4) chunk = lower + upper + sym + valStr;
                     else if (level === 5) {
@@ -573,7 +573,7 @@
                 let continuousIndex = word.length + p; // Continues the rotational form math perfectly
 
                 if (level === 1) chunk = valStr;
-                else if (level === 2) chunk = lower + valStr;
+                else if (level === 2) chunk = upper + valStr; // FIX: Aligns padding structure with level 2 case fix
                 else if (level === 3) chunk = upper + sym + valStr;
                 else if (level === 4) chunk = lower + upper + sym + valStr;
                 else if (level === 5) {
@@ -652,7 +652,18 @@
                 }
 
                 let unshiftedVal = ((shiftedVal - 1 - (offset % 36) + 36) % 36) + 1;
-                let originalChar = getCharFromBaseValue(unshiftedVal);
+                let baseChar = getCharFromBaseValue(unshiftedVal);
+                let originalChar = baseChar;
+
+                // FIX: Case Preservation Scanner!
+                if (baseChar && baseChar >= 'A' && baseChar <= 'Z') {
+                    if (level === 1) {
+                        originalChar = baseChar.toLowerCase(); // Level 1 (Numeric) loses case entirely, defaults to lower.
+                    } else {
+                        // The engine scans the chunk. If the uppercase letter isn't found inside, it knows it was lowercase!
+                        originalChar = chunk.includes(baseChar) ? baseChar : baseChar.toLowerCase();
+                    }
+                }
 
                 if (originalChar) {
                     decodedStr += originalChar;
